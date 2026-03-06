@@ -5,6 +5,8 @@ from app.twilio_ws import twilio_ws
 from app.twilio_call import call_number
 from app.models import CallTranscript
 from app.analyzer import analyze_call
+from app.store import results_store
+
 
 app = FastAPI()
 
@@ -29,6 +31,22 @@ def make_call(number: str):
     sid = call_number(number)
     return {"call_sid": sid}
 
+@app.post("/call-batch")
+async def call_batch(data: dict):
+
+    numbers_text = data.get("numbers", "")
+
+    numbers = [
+        n.strip()
+        for n in numbers_text.split("\n")
+        if n.strip()
+    ]
+
+    for number in numbers:
+        call_number(number)
+
+    return {"status": "started", "count": len(numbers)}
+
 @app.get("/")
 def health():
     return {"status": "AI Voice Agent running"}
@@ -44,3 +62,7 @@ async def analyze(data: CallTranscript):
         "duration": data.duration,
         "analysis": result
     }
+
+@app.get("/results")
+def get_results():
+    return results_store

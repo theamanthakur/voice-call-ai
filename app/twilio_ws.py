@@ -332,7 +332,7 @@ from app.stt_raw import DeepgramRaw
 from app.llm import generate_reply
 from app.tts import text_to_speech_stream
 from app.analyzer import analyze_call
-from app.store import results_store
+# from app.store import results_store
 
 
 async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):

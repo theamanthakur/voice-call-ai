@@ -323,6 +323,238 @@
 #             print("⚠️ Analyzer error:", e)
 
 
+# from fastapi import WebSocket
+# import json
+# import base64
+# import asyncio
+
+# from app.stt_raw import DeepgramRaw
+# from app.llm import generate_reply
+# from app.tts import text_to_speech_stream
+# from app.analyzer import analyze_call
+
+
+# async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
+#     await websocket.accept()
+
+#     dg = DeepgramRaw()
+#     loop = asyncio.get_running_loop()
+
+#     stream_sid: str | None = None
+#     history: list[str] = []
+#     transcript_log: list[dict] = []
+
+#     user_speech_buffer: list[str] = []
+#     silence_timer: asyncio.Task | None = None
+#     playback_task: asyncio.Task | None = None
+
+#     SILENCE_THRESHOLD = 0.3
+#     FRAME_SIZE = 160
+#     FRAME_DELAY = 0.02
+
+#     async def send_audio(audio_bytes: bytes):
+#         if not stream_sid or not audio_bytes:
+#             return
+
+#         await websocket.send_text(json.dumps({
+#             "event": "media",
+#             "streamSid": stream_sid,
+#             "media": {
+#                 "payload": base64.b64encode(audio_bytes).decode("utf-8")
+#             }
+#         }))
+
+#     async def clear_audio():
+#         if not stream_sid:
+#             return
+
+#         await websocket.send_text(json.dumps({
+#             "event": "clear",
+#             "streamSid": stream_sid
+#         }))
+
+#     async def stream_audio_to_twilio(reply: str):
+#         def collect_chunks():
+#             return list(text_to_speech_stream(reply))
+
+
+#         chunks = await loop.run_in_executor(None, collect_chunks)
+
+#         buffer = b""
+#         for chunk in chunks:
+#             if not isinstance(chunk, bytes) or not chunk:
+#                 continue
+
+#             buffer += chunk
+
+#             while len(buffer) >= FRAME_SIZE:
+#                 frame = buffer[:FRAME_SIZE]
+#                 buffer = buffer[FRAME_SIZE:]
+#                 await send_audio(frame)
+#                 await asyncio.sleep(FRAME_DELAY)
+
+#         if buffer:
+#             if len(buffer) < FRAME_SIZE:
+#                 buffer += b"\xff" * (FRAME_SIZE - len(buffer))
+#             await send_audio(buffer)
+
+#     async def process_user_input():
+#         nonlocal user_speech_buffer, playback_task
+
+#         if not user_speech_buffer:
+#             return
+
+#         combined_text = " ".join(user_speech_buffer).strip()
+#         user_speech_buffer = []
+
+#         if not combined_text:
+#             return
+
+#         print(f"👤 User: {combined_text}")
+#         history.append(combined_text)
+#         transcript_log.append({
+#             "speaker": "user",
+#             "text": combined_text
+#         })
+
+#         reply = await loop.run_in_executor(None, generate_reply, history)
+
+#         print(f"🤖 Ananya: {reply}")
+#         history.append(reply)
+#         transcript_log.append({
+#             "speaker": "agent",
+#             "text": reply
+#         })
+
+#         if playback_task and not playback_task.done():
+#             playback_task.cancel()
+#             try:
+#                 await playback_task
+#             except asyncio.CancelledError:
+#                 pass
+
+#         playback_task = asyncio.create_task(stream_audio_to_twilio(reply))
+
+#     def on_transcript(text: str, raw: dict):
+#         nonlocal silence_timer, playback_task
+
+#         if not raw.get("is_final"):
+#             return
+
+#         print(f"📝 Final: {text}")
+#         user_speech_buffer.append(text)
+
+#         if playback_task and not playback_task.done():
+#             playback_task.cancel()
+#             loop.create_task(clear_audio())
+
+#         if silence_timer:
+#             silence_timer.cancel()
+
+#         silence_timer = loop.create_task(wait_for_silence())
+
+#     async def wait_for_silence():
+#         try:
+#             await asyncio.sleep(SILENCE_THRESHOLD)
+#             await process_user_input()
+#         except asyncio.CancelledError:
+#             pass
+
+#     await dg.connect(on_transcript)
+
+#     try:
+#         while True:
+#             msg = await websocket.receive_text()
+#             data = json.loads(msg)
+#             event = data.get("event")
+
+#             if event == "start":
+#                 stream_sid = data["start"]["streamSid"]
+#                 call_sid = data["start"].get("callSid")
+#             if call_sid and phone_number is None:
+#                 from app.twilio_call import get_number_for_sid
+#                 phone_number = get_number_for_sid(call_sid)
+#                 print(f"📞 Stream started | SID: {stream_sid} | Number: {phone_number}")
+
+#             elif event == "media":
+#                 payload = data.get("media", {}).get("payload")
+#                 if payload:
+#                     await dg.send_audio(base64.b64decode(payload))
+
+#             elif event == "stop":
+#                 print("📞 Call ended")
+#                 break
+
+#     except Exception as e:
+#         print(f"❌ WS error: {e}")
+
+#     # finally:
+#     #     if silence_timer and not silence_timer.done():
+#     #         silence_timer.cancel()
+
+#     #     if playback_task and not playback_task.done():
+#     #         playback_task.cancel()
+#     #         try:
+#     #             await playback_task
+#     #         except asyncio.CancelledError:
+#     #             pass
+
+#     #     await dg.close()
+
+#     #     try:
+#     #         full_transcript = "\n".join(
+#     #             f"{x['speaker']}: {x['text']}" for x in transcript_log
+#     #         )
+#     #         print("\n📜 Transcript\n", full_transcript)
+
+#     #         analysis = analyze_call(full_transcript)
+#     #         print("\n📊 AI Analysis\n", analysis)
+
+#     #         key = phone_number or stream_sid or f"call_{len(results_store) + 1}"
+#     #         results_store[key] = {
+#     #             "number": phone_number,
+#     #             "stream_sid": stream_sid,
+#     #             "transcript": full_transcript,
+#     #             "analysis": analysis
+#     #         }
+
+#     #     except Exception as e:
+#     #         print("⚠️ Analyzer error:", e)
+#     finally:
+#     # ... your existing cleanup code ...
+
+#         await dg.close()
+
+#     try:
+#         full_transcript = "\n".join(
+#             f"{x['speaker']}: {x['text']}" for x in transcript_log
+#         )
+#         print("\n📜 Transcript\n", full_transcript)
+
+#         analysis_raw = analyze_call(full_transcript)
+#         analysis = json.loads(analysis_raw)  # parse the JSON string
+
+#         # Inject fields the LLM can't know
+#         analysis["duration_seconds"] = len(transcript_log) * 15  # rough estimate
+#         analysis["phone_number"] = phone_number
+#         analysis["stream_sid"] = stream_sid
+
+#         print("\n📊 Analysis\n", analysis)
+
+#         from app.store import save_result
+#         key = phone_number or stream_sid or f"call_{id(websocket)}"
+#         save_result(key, {
+#             "number": phone_number,
+#             "stream_sid": stream_sid,
+#             "transcript": full_transcript,
+#             "analysis": analysis
+#         })
+
+#     except Exception as e:
+#         print("⚠️ Analyzer error:", e)
+
+
+# app/twilio_ws.py
 from fastapi import WebSocket
 import json
 import base64
@@ -332,6 +564,7 @@ from app.stt_raw import DeepgramRaw
 from app.llm import generate_reply
 from app.tts import text_to_speech_stream
 from app.analyzer import analyze_call
+from app.store import save_result
 
 
 async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
@@ -352,22 +585,20 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
     FRAME_SIZE = 160
     FRAME_DELAY = 0.02
 
+    # ── Audio helpers ────────────────────────────────────────────────────────
+
     async def send_audio(audio_bytes: bytes):
         if not stream_sid or not audio_bytes:
             return
-
         await websocket.send_text(json.dumps({
             "event": "media",
             "streamSid": stream_sid,
-            "media": {
-                "payload": base64.b64encode(audio_bytes).decode("utf-8")
-            }
+            "media": {"payload": base64.b64encode(audio_bytes).decode("utf-8")}
         }))
 
     async def clear_audio():
         if not stream_sid:
             return
-
         await websocket.send_text(json.dumps({
             "event": "clear",
             "streamSid": stream_sid
@@ -377,16 +608,13 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
         def collect_chunks():
             return list(text_to_speech_stream(reply))
 
-
         chunks = await loop.run_in_executor(None, collect_chunks)
 
         buffer = b""
         for chunk in chunks:
             if not isinstance(chunk, bytes) or not chunk:
                 continue
-
             buffer += chunk
-
             while len(buffer) >= FRAME_SIZE:
                 frame = buffer[:FRAME_SIZE]
                 buffer = buffer[FRAME_SIZE:]
@@ -394,9 +622,10 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
                 await asyncio.sleep(FRAME_DELAY)
 
         if buffer:
-            if len(buffer) < FRAME_SIZE:
-                buffer += b"\xff" * (FRAME_SIZE - len(buffer))
+            buffer += b"\xff" * (FRAME_SIZE - len(buffer))
             await send_audio(buffer)
+
+    # ── STT / LLM pipeline ───────────────────────────────────────────────────
 
     async def process_user_input():
         nonlocal user_speech_buffer, playback_task
@@ -412,19 +641,13 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
 
         print(f"👤 User: {combined_text}")
         history.append(combined_text)
-        transcript_log.append({
-            "speaker": "user",
-            "text": combined_text
-        })
+        transcript_log.append({"speaker": "user", "text": combined_text})
 
         reply = await loop.run_in_executor(None, generate_reply, history)
 
         print(f"🤖 Ananya: {reply}")
         history.append(reply)
-        transcript_log.append({
-            "speaker": "agent",
-            "text": reply
-        })
+        transcript_log.append({"speaker": "agent", "text": reply})
 
         if playback_task and not playback_task.done():
             playback_task.cancel()
@@ -460,7 +683,11 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
         except asyncio.CancelledError:
             pass
 
+    # ── Connect Deepgram ─────────────────────────────────────────────────────
+
     await dg.connect(on_transcript)
+
+    # ── Main WebSocket loop ──────────────────────────────────────────────────
 
     try:
         while True:
@@ -471,9 +698,10 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
             if event == "start":
                 stream_sid = data["start"]["streamSid"]
                 call_sid = data["start"].get("callSid")
-            if call_sid and phone_number is None:
-                from app.twilio_call import get_number_for_sid
-                phone_number = get_number_for_sid(call_sid)
+                # Resolve phone number from the sid→number map
+                if call_sid and phone_number is None:
+                    from app.twilio_call import get_number_for_sid
+                    phone_number = get_number_for_sid(call_sid)
                 print(f"📞 Stream started | SID: {stream_sid} | Number: {phone_number}")
 
             elif event == "media":
@@ -488,67 +716,50 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
     except Exception as e:
         print(f"❌ WS error: {e}")
 
-    # finally:
-    #     if silence_timer and not silence_timer.done():
-    #         silence_timer.cancel()
+    # ── Cleanup + Analysis ───────────────────────────────────────────────────
 
-    #     if playback_task and not playback_task.done():
-    #         playback_task.cancel()
-    #         try:
-    #             await playback_task
-    #         except asyncio.CancelledError:
-    #             pass
-
-    #     await dg.close()
-
-    #     try:
-    #         full_transcript = "\n".join(
-    #             f"{x['speaker']}: {x['text']}" for x in transcript_log
-    #         )
-    #         print("\n📜 Transcript\n", full_transcript)
-
-    #         analysis = analyze_call(full_transcript)
-    #         print("\n📊 AI Analysis\n", analysis)
-
-    #         key = phone_number or stream_sid or f"call_{len(results_store) + 1}"
-    #         results_store[key] = {
-    #             "number": phone_number,
-    #             "stream_sid": stream_sid,
-    #             "transcript": full_transcript,
-    #             "analysis": analysis
-    #         }
-
-    #     except Exception as e:
-    #         print("⚠️ Analyzer error:", e)
     finally:
-    # ... your existing cleanup code ...
+        # Cancel pending tasks
+        if silence_timer and not silence_timer.done():
+            silence_timer.cancel()
+
+        if playback_task and not playback_task.done():
+            playback_task.cancel()
+            try:
+                await playback_task
+            except asyncio.CancelledError:
+                pass
 
         await dg.close()
 
-    try:
-        full_transcript = "\n".join(
-            f"{x['speaker']}: {x['text']}" for x in transcript_log
-        )
-        print("\n📜 Transcript\n", full_transcript)
+        # Run post-call analysis and persist result
+        try:
+            if not transcript_log:
+                print("⚠️ No transcript — skipping analysis")
+                return
 
-        analysis_raw = analyze_call(full_transcript)
-        analysis = json.loads(analysis_raw)  # parse the JSON string
+            full_transcript = "\n".join(
+                f"{x['speaker']}: {x['text']}" for x in transcript_log
+            )
+            print("\n📜 Transcript\n", full_transcript)
 
-        # Inject fields the LLM can't know
-        analysis["duration_seconds"] = len(transcript_log) * 15  # rough estimate
-        analysis["phone_number"] = phone_number
-        analysis["stream_sid"] = stream_sid
+            analysis_raw = analyze_call(full_transcript)
+            analysis = json.loads(analysis_raw)
 
-        print("\n📊 Analysis\n", analysis)
+            # Inject fields the LLM can't know
+            analysis["duration_seconds"] = len(transcript_log) * 15
+            analysis["phone_number"] = phone_number
+            analysis["stream_sid"] = stream_sid
 
-        from app.store import save_result
-        key = phone_number or stream_sid or f"call_{id(websocket)}"
-        save_result(key, {
-            "number": phone_number,
-            "stream_sid": stream_sid,
-            "transcript": full_transcript,
-            "analysis": analysis
-        })
+            print("\n📊 Analysis\n", analysis)
 
-    except Exception as e:
-        print("⚠️ Analyzer error:", e)
+            key = phone_number or stream_sid or f"call_{id(websocket)}"
+            save_result(key, {
+                "number": phone_number,
+                "stream_sid": stream_sid,
+                "transcript": full_transcript,
+                "analysis": analysis
+            })
+
+        except Exception as e:
+            print(f"⚠️ Analyzer error: {e}")

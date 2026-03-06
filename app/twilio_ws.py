@@ -471,7 +471,11 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
 
             if event == "start":
                 stream_sid = data["start"]["streamSid"]
-                print(f"📞 Stream started: {stream_sid}")
+                call_sid = data["start"].get("callSid")
+            if call_sid and phone_number is None:
+                from app.twilio_call import get_number_for_sid
+                phone_number = get_number_for_sid(call_sid)
+                print(f"📞 Stream started | SID: {stream_sid} | Number: {phone_number}")
 
             elif event == "media":
                 payload = data.get("media", {}).get("payload")
@@ -485,35 +489,67 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
     except Exception as e:
         print(f"❌ WS error: {e}")
 
-    finally:
-        if silence_timer and not silence_timer.done():
-            silence_timer.cancel()
+    # finally:
+    #     if silence_timer and not silence_timer.done():
+    #         silence_timer.cancel()
 
-        if playback_task and not playback_task.done():
-            playback_task.cancel()
-            try:
-                await playback_task
-            except asyncio.CancelledError:
-                pass
+    #     if playback_task and not playback_task.done():
+    #         playback_task.cancel()
+    #         try:
+    #             await playback_task
+    #         except asyncio.CancelledError:
+    #             pass
+
+    #     await dg.close()
+
+    #     try:
+    #         full_transcript = "\n".join(
+    #             f"{x['speaker']}: {x['text']}" for x in transcript_log
+    #         )
+    #         print("\n📜 Transcript\n", full_transcript)
+
+    #         analysis = analyze_call(full_transcript)
+    #         print("\n📊 AI Analysis\n", analysis)
+
+    #         key = phone_number or stream_sid or f"call_{len(results_store) + 1}"
+    #         results_store[key] = {
+    #             "number": phone_number,
+    #             "stream_sid": stream_sid,
+    #             "transcript": full_transcript,
+    #             "analysis": analysis
+    #         }
+
+    #     except Exception as e:
+    #         print("⚠️ Analyzer error:", e)
+    finally:
+    # ... your existing cleanup code ...
 
         await dg.close()
 
-        try:
-            full_transcript = "\n".join(
-                f"{x['speaker']}: {x['text']}" for x in transcript_log
-            )
-            print("\n📜 Transcript\n", full_transcript)
+    try:
+        full_transcript = "\n".join(
+            f"{x['speaker']}: {x['text']}" for x in transcript_log
+        )
+        print("\n📜 Transcript\n", full_transcript)
 
-            analysis = analyze_call(full_transcript)
-            print("\n📊 AI Analysis\n", analysis)
+        analysis_raw = analyze_call(full_transcript)
+        analysis = json.loads(analysis_raw)  # parse the JSON string
 
-            key = phone_number or stream_sid or f"call_{len(results_store) + 1}"
-            results_store[key] = {
-                "number": phone_number,
-                "stream_sid": stream_sid,
-                "transcript": full_transcript,
-                "analysis": analysis
-            }
+        # Inject fields the LLM can't know
+        analysis["duration_seconds"] = len(transcript_log) * 15  # rough estimate
+        analysis["phone_number"] = phone_number
+        analysis["stream_sid"] = stream_sid
 
-        except Exception as e:
-            print("⚠️ Analyzer error:", e)
+        print("\n📊 Analysis\n", analysis)
+
+        from app.store import save_result
+        key = phone_number or stream_sid or f"call_{id(websocket)}"
+        save_result(key, {
+            "number": phone_number,
+            "stream_sid": stream_sid,
+            "transcript": full_transcript,
+            "analysis": analysis
+        })
+
+    except Exception as e:
+        print("⚠️ Analyzer error:", e)

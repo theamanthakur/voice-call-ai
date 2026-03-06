@@ -5,7 +5,8 @@ from app.twilio_ws import twilio_ws
 from app.twilio_call import call_number
 from app.models import CallTranscript
 from app.analyzer import analyze_call
-from app.store import results_store
+from app.store import get_all_results
+
 
 
 app = FastAPI()
@@ -67,4 +68,4 @@ async def analyze(data: CallTranscript):
 
 @app.get("/results")
 def get_results():
-    return results_store
+    return get_all_results()

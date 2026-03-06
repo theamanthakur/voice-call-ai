@@ -12,7 +12,7 @@ def call_number(to_number: str):
     call = client.calls.create(
         to=to_number,
         from_=TWILIO_FROM_NUMBER,
-        url="https://agrostographic-congenital-brook.ngrok-free.dev/voice",
+        url="https://web-production-c0d66.up.railway.app/voice",
     )
     print("📞 Outbound call SID:", call.sid)
     return call.sid

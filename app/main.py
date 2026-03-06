@@ -13,7 +13,7 @@ app = FastAPI()
 @app.post("/voice")
 def voice():
     # We use <Connect> for a robust bi-directional stream
-    railway_url = "web-production-c0d66.up.railway.app"
+    railway_url = "https://web-production-c0d66.up.railway.app/"
     twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
 
 <Response>

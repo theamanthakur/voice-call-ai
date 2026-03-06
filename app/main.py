@@ -13,10 +13,11 @@ app = FastAPI()
 @app.post("/voice")
 def voice():
     # We use <Connect> for a robust bi-directional stream
+    railway_ws_url = "wss://web-production-c0d66.up.railway.app/ws"
     twiml = """
 <Response>
     <Connect>
-        <Stream url="wss://agrostographic-congenital-brook.ngrok-free.dev/ws" />
+        <Stream url="{railway_ws_url}" />
     </Connect>
 </Response>
     """

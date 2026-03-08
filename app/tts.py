@@ -90,7 +90,7 @@ from app.config import ELEVENLABS_API_KEY
 
 client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 
-VOICE_ID = "1zUSi8LeHs9M2mV8X6YS"
+VOICE_ID = "Zjj2iX3aHYDcJSG4mMzk"
 MODEL_ID = "eleven_turbo_v2_5"
 VOICE_SETTINGS = VoiceSettings(
     stability=0.30,

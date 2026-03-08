@@ -90,7 +90,7 @@ Rules:
 
 Style:
 - Address as Sir.
-- Professional warm Hinglish.
+- Professional warm Hindi & Hinglish.
 - One crisp sentence under 14 words.
 - End with a strategic question.
 - Guide toward office meeting or site visit.

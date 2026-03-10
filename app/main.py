@@ -86,11 +86,16 @@ from app.twilio_call import call_number
 from app.models import CallTranscript
 from app.analyzer import analyze_call
 from app.store import get_all_results
+import asyncio
+
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=[
+        "https://www.codeintelailabs.com/agents/re_agent.html"
+    ],
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
@@ -131,13 +136,16 @@ def make_call(number: str):
 @app.post("/call-batch")
 async def call_batch(data: dict):
     numbers_text = data.get("numbers", "")
+
     numbers = [
-        n.strip().replace(" ", "")          # strip spaces: +91 98765 → +9198765
+        n.strip().replace(" ", "")
         for n in numbers_text.split("\n")
         if n.strip()
     ]
-    for number in numbers:
-        call_number(number)
+
+    tasks = [asyncio.to_thread(call_number, number) for number in numbers]
+    await asyncio.gather(*tasks)
+
     return {"status": "started", "count": len(numbers)}
 
 

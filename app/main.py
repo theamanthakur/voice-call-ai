@@ -96,7 +96,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-RAILWAY_URL = "web-production-c0d66.up.railway.app"
+# RAILWAY_URL = "web-production-c0d66.up.railway.app"
+RAILWAY_URL = "https://agrostographic-congenital-brook.ngrok-free.dev"
+
 
 
 @app.get("/")
@@ -109,7 +111,7 @@ def voice():
     twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Connect>
-        <Stream url="wss://{RAILWAY_URL}/ws" />
+        <Stream url="wss://agrostographic-congenital-brook.ngrok-free.dev/ws" />
     </Connect>
 </Response>"""
     return Response(content=twiml, media_type="application/xml")

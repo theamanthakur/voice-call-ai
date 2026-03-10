@@ -45,7 +45,7 @@ def call_number(to_number: str) -> str:
     call = client.calls.create(
         to=to_number,
         from_=TWILIO_FROM_NUMBER,
-        url="https://agrostographic-congenital-brook.ngrok-free.dev/voice",
+        url="https://web-production-c0d66.up.railway.app/voice",
     )
     _sid_to_number[call.sid] = to_number
     print(f"📞 Outbound call → {to_number} | SID: {call.sid}")

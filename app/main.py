@@ -86,8 +86,6 @@ from app.twilio_call import call_number
 from app.models import CallTranscript
 from app.analyzer import analyze_call
 from app.store import get_all_results
-import asyncio
-
 
 app = FastAPI()
 
@@ -98,9 +96,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# RAILWAY_URL = "web-production-c0d66.up.railway.app"
 RAILWAY_URL = "web-production-c0d66.up.railway.app"
-# RAILWAY_URL = "https://agrostographic-congenital-brook.ngrok-free.dev"
-
+# https://agrostographic-congenital-brook.ngrok-free.dev
 
 
 @app.get("/")
@@ -133,16 +131,13 @@ def make_call(number: str):
 @app.post("/call-batch")
 async def call_batch(data: dict):
     numbers_text = data.get("numbers", "")
-
     numbers = [
-        n.strip().replace(" ", "")
+        n.strip().replace(" ", "")          # strip spaces: +91 98765 → +9198765
         for n in numbers_text.split("\n")
         if n.strip()
     ]
-
-    tasks = [asyncio.to_thread(call_number, number) for number in numbers]
-    await asyncio.gather(*tasks)
-
+    for number in numbers:
+        call_number(number)
     return {"status": "started", "count": len(numbers)}
 
 

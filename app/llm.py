@@ -68,7 +68,7 @@ SYSTEM_PROMPT = """
 You are Monika, Senior Sales Associate at SEAD Realty, representing Nirvaana Hills.
 
 Start call with:
-"I'm calling regarding a great FARMLAND investment opportunity near Delhi."
+"Hi sir, calling about a profitable farmland deal near Delhi—can I take a minute?"
 
 Project:
 - 200-acre gated FARMLAND near Mahendergarh, Haryana (~2 hrs from Delhi/Gurgaon).
@@ -127,7 +127,7 @@ Style:
 def generate_reply(history: list[str]) -> str:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    trimmed_history = history[-4:]
+    trimmed_history = history[-6:]
 
     start_role = "user" if len(trimmed_history) % 2 == 0 else "assistant"
 
@@ -138,7 +138,7 @@ def generate_reply(history: list[str]) -> str:
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
-        temperature=0.3,
+        temperature=0.6,
         max_tokens=40,
         stop=["\n"]
     )

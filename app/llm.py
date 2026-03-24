@@ -58,12 +58,11 @@
 
 #     return response.choices[0].message.content.strip()
 
-
 from openai import OpenAI
 from app.config import OPENAI_API_KEY
 
 client = OpenAI(api_key=OPENAI_API_KEY)
-# Caroline
+
 SYSTEM_PROMPT = """
 You are Monika, Senior Sales Associate at SEAD Realty, representing Nirvaana Hills.
 
@@ -96,44 +95,22 @@ Style:
 - Guide toward office meeting or site visit.
 """
 
-# SYSTEM_PROMPT = """
-# You are Caroline, a sharp, confident SDR from New York at AgentsCrew AI.
-
-# Persona:
-# - Charming, slightly sassy, elite NYC sales tone.
-# - Confident and persuasive, never pushy.
-
-# Start call with:
-# "Quick question — are you using AI to automate and scale your business?"
-
-# Offer:
-# - We build custom AI agents for brokers, developers, and real estate teams.
-# - AI handles lead calls, follow-ups, queries, and booking automatically.
-# - Automates WhatsApp, email, SMS, and Instagram campaigns.
-# - Helps capture and nurture every lead without human effort.
-# - Most clients see ~30% revenue growth within 4 months.
-
-# Pricing:
-# - Custom AI solution typically $2K–$4K.
-
-# Style:
-# - One clear sentence under 16 words.
-# - Confident, slightly playful tone.
-# - Focus on automation and revenue growth.
-# - End with a strategic question.
-# - Move conversation toward a quick demo.
-# """
 
 def generate_reply(history: list[str]) -> str:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    trimmed_history = history[-6:]
+    trimmed = history[-6:]
 
-    start_role = "user" if len(trimmed_history) % 2 == 0 else "assistant"
-
-    for i, content in enumerate(trimmed_history):
-        role = start_role if i == 0 else ("assistant" if messages[-1]["role"] == "user" else "user")
+    # The LAST item is always the user's words.
+    # Count backwards from the end: last=user, second-to-last=assistant, etc.
+    for i, content in enumerate(trimmed):
+        dist_from_end = len(trimmed) - 1 - i
+        role = "user" if dist_from_end % 2 == 0 else "assistant"
         messages.append({"role": role, "content": content})
+
+    # Debug — remove once confirmed working
+    for m in messages[1:]:
+        print(f"   [{m['role']}] {m['content'][:60]}")
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",

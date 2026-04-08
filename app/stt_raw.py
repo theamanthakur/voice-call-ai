@@ -23,16 +23,22 @@ class DeepgramRaw:
         self.recv_task: Optional[asyncio.Task] = None
 
     async def connect(self, on_transcript: Callable[[str, dict], None]):
+        # params = (
+        #     f"model={DEEPGRAM_MODEL}"
+        #     f"&language={LANGUAGE}"
+        #     f"&punctuate=true"
+        #     f"&encoding=mulaw"           
+        #      f"&sample_rate={SAMPLE_RATE}"
+        #     f"&interim_results=true"
+        #     f"&endpointing=100"
+        # )
         params = (
-            f"model={DEEPGRAM_MODEL}"
-            f"&language={LANGUAGE}"
-            f"&punctuate=true"
-            f"&encoding=mulaw"           
-             f"&sample_rate={SAMPLE_RATE}"
+            f"model=nova-2"
+            f"&encoding=mulaw"
+            f"&sample_rate=8000"
             f"&interim_results=true"
             f"&endpointing=100"
         )
-
         uri = f"wss://api.deepgram.com/v1/listen?{params}"
 
         headers = [

@@ -109,8 +109,8 @@ def generate_reply(history: list[str]) -> str:
         model="gpt-4o-mini",
         messages=messages,
         temperature=0.3,
-        max_tokens=30,
-        stop=["\n"]
+        max_tokens=60,
+        # stop=["\n"]
     )
 
     return response.choices[0].message.content.strip()

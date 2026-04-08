@@ -64,53 +64,95 @@ from app.config import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 SYSTEM_PROMPT = """
-You are Monika, a real estate sales advisor for premium flats in Vasant Vihar.
+You are Monika, a smart and friendly real estate sales advisor for premium flats in Vasant Vihar, Delhi.
 
-Start call with:
-"Hi sir, quick call regarding a 2 or 3 BHK flat in Vasant Vihar—can I take a minute?"
+IMPORTANT:
+- Speak in natural Hindi + Hinglish (primary Hindi).
+- Sound like a real human who knows Vasant Vihar very well (metro, schools, markets, connectivity).
+- You can handle ANY question confidently, even with approximate or dummy info.
 
-Project:
+OPENING:
+- ONLY greet once at the start of the conversation.
+- Never repeat "Hi sir" again after first message.
+
+PROJECT:
 - 2 & 3 BHK flats in Vasant Vihar.
-- Well-connected location (near metro, schools, markets).
+- Good location near metro, schools, markets.
 - Suitable for family living and investment.
 - EMI options available.
 
-Rules:
-- Do not disclose exact price unless asked.
-- If needed, say “budget-friendly range”.
-- Sound like you know the Vasant Vihar area well.
-- Do not overpromise returns.
+PRICING:
+- Do NOT reveal exact price unless asked.
+- Say: "price aapke budget ke around manageable hai"
+- If pushed: say range smartly (approx, not exact).
 
-Style:
-- Address as Sir.
-- Warm, confident Hindi and Hinglish.
-- One short sentence under 14-20 words.
-- End with a question.
-- Guide toward site visit or meeting.
+BEHAVIOR:
+- Answer all questions naturally (location, size, EMI, possession, builder, etc.).
+- If unsure, give confident general answer (do not say "I don't know").
+- Keep conversation flowing toward visit or meeting.
+
+STYLE:
+- Address as "Sir".
+- 1 short sentence (max 15–18 words).
+- Always complete sentence (never cut).
+- End with a question to continue conversation.
+
+GOAL:
+- Move user toward site visit or meeting.
 """
+
+
+# def generate_reply(history: list[str]) -> str:
+#     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+#     trimmed = history[-6:]
+
+#     # The LAST item is always the user's words.
+#     # Count backwards from the end: last=user, second-to-last=assistant, etc.
+#     for i, content in enumerate(trimmed):
+#         dist_from_end = len(trimmed) - 1 - i
+#         role = "user" if dist_from_end % 2 == 0 else "assistant"
+#         messages.append({"role": role, "content": content})
+
+#     # Debug — remove once confirmed working
+#     for m in messages[1:]:
+#         print(f"   [{m['role']}] {m['content'][:60]}")
+
+#     response = client.chat.completions.create(
+#         model="gpt-4o-mini",
+#         messages=messages,
+#         temperature=0.3,
+#         max_tokens=60,
+#         # stop=["\n"]
+#     )
+
+#     return response.choices[0].message.content.strip()
 
 def generate_reply(history: list[str]) -> str:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    trimmed = history[-6:]
+    # ✅ keep more context (important)
+    trimmed = history[-12:]   # was 6 → too small
 
-    # The LAST item is always the user's words.
-    # Count backwards from the end: last=user, second-to-last=assistant, etc.
     for i, content in enumerate(trimmed):
-        dist_from_end = len(trimmed) - 1 - i
-        role = "user" if dist_from_end % 2 == 0 else "assistant"
+        role = "user" if i % 2 == 0 else "assistant"
         messages.append({"role": role, "content": content})
 
-    # Debug — remove once confirmed working
+    # DEBUG
     for m in messages[1:]:
-        print(f"   [{m['role']}] {m['content'][:60]}")
+        print(f"[{m['role']}] {m['content'][:60]}")
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
-        temperature=0.3,
-        max_tokens=60,
-        # stop=["\n"]
+        temperature=0.5,
+        max_tokens=60
     )
 
-    return response.choices[0].message.content.strip()
+    reply = response.choices[0].message.content.strip()
+
+    # ✅ prevent repeated greeting
+    if "hi sir" in reply.lower() and len(history) > 2:
+        reply = reply.replace("Hi sir,", "").replace("Hi Sir,", "")
+
+    return reply

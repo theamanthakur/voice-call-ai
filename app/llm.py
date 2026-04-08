@@ -83,8 +83,8 @@ Rules:
 
 Style:
 - Address as Sir.
-- Warm, confident Hinglish.
-- One short sentence under 14 words.
+- Warm, confident Hindi and Hinglish.
+- One short sentence under 14-20 words.
 - End with a question.
 - Guide toward site visit or meeting.
 """
@@ -108,8 +108,8 @@ def generate_reply(history: list[str]) -> str:
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
-        temperature=0.6,
-        max_tokens=40,
+        temperature=0.3,
+        max_tokens=30,
         stop=["\n"]
     )
 

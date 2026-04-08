@@ -581,9 +581,9 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
     silence_timer: asyncio.Task | None = None
     playback_task: asyncio.Task | None = None
 
-    SILENCE_THRESHOLD = 0.3
+    SILENCE_THRESHOLD = 0.15
     FRAME_SIZE = 160
-    FRAME_DELAY = 0.02
+    FRAME_DELAY = 0.01
 
     # ── Audio helpers ────────────────────────────────────────────────────────
 
@@ -605,8 +605,16 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
         }))
 
     async def stream_audio_to_twilio(reply: str):
-        def collect_chunks():
-            return list(text_to_speech_stream(reply))
+        try:
+            for chunk in text_to_speech_stream(reply):  # streaming, not list
+                if not isinstance(chunk, bytes) or not chunk:
+                    continue
+
+            await send_audio(chunk)
+
+        except Exception as e:
+            print("❌ TTS ERROR:", e)
+        return list(text_to_speech_stream(reply))
 
         chunks = await loop.run_in_executor(None, collect_chunks)
 
@@ -656,12 +664,18 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
             except asyncio.CancelledError:
                 pass
 
-        playback_task = asyncio.create_task(stream_audio_to_twilio(reply))
+        async def safe_stream():
+            try:
+                await stream_audio_to_twilio(reply)
+            except Exception as e:
+                print("❌ STREAM ERROR:", e)
+
+        playback_task = asyncio.create_task(safe_stream())
 
     def on_transcript(text: str, raw: dict):
         nonlocal silence_timer, playback_task
 
-        if not raw.get("is_final"):
+        if not raw.get("is_final") and len(text.split()) < 3:
             return
 
         print(f"📝 Final: {text}")

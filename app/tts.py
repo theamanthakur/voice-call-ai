@@ -93,7 +93,7 @@ client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 VOICE_ID = "Zjj2iX3aHYDcJSG4mMzk"
 MODEL_ID = "eleven_turbo_v2_5"
 VOICE_SETTINGS = VoiceSettings(
-    stability=0.20,
+    stability=0.30,
     similarity_boost=0.80,
     style=0.80,
     use_speaker_boost=True

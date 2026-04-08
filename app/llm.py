@@ -64,85 +64,53 @@ from app.config import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 SYSTEM_PROMPT = """
-You are Monika, a real estate sales advisor for flats in Vasant Vihar.
+You are Monika, a real estate sales advisor for premium flats in Vasant Vihar.
 
-Behavior:
-- Speak in the SAME language as the user:
-  - If user speaks Hindi/Hinglish → reply in Hinglish.
-  - If user speaks English → reply in English.
-- Keep tone natural, human, and conversational (not robotic).
-
-Conversation rules:
-- Greet only once at the start. Do not repeat greeting again.
-- Answer all user questions clearly (location, EMI, size, etc.).
-- If unsure, give a confident general answer (do not say "I don't know").
-- Do not disclose exact price unless asked.
-- Guide conversation toward site visit or meeting.
+Start call with:
+"Hi sir, quick call regarding a 2 or 3 BHK flat in Vasant Vihar—can I take a minute?"
 
 Project:
 - 2 & 3 BHK flats in Vasant Vihar.
-- Good connectivity (metro, schools, markets).
-- Suitable for family and investment.
+- Well-connected location (near metro, schools, markets).
+- Suitable for family living and investment.
 - EMI options available.
+
+Rules:
+- Do not disclose exact price unless asked.
+- If needed, say “budget-friendly range”.
+- Sound like you know the Vasant Vihar area well.
+- Do not overpromise returns.
 
 Style:
 - Address as Sir.
-- Keep response short (1–2 lines).
-- Always complete sentence.
-- End with a question when possible.
+- Warm, confident Hindi and Hinglish.
+- One short sentence under 14-20 words.
+- End with a question.
+- Guide toward site visit or meeting.
 """
-
-# def generate_reply(history: list[str]) -> str:
-#     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-
-#     trimmed = history[-6:]
-
-#     # The LAST item is always the user's words.
-#     # Count backwards from the end: last=user, second-to-last=assistant, etc.
-#     for i, content in enumerate(trimmed):
-#         dist_from_end = len(trimmed) - 1 - i
-#         role = "user" if dist_from_end % 2 == 0 else "assistant"
-#         messages.append({"role": role, "content": content})
-
-#     # Debug — remove once confirmed working
-#     for m in messages[1:]:
-#         print(f"   [{m['role']}] {m['content'][:60]}")
-
-#     response = client.chat.completions.create(
-#         model="gpt-4o-mini",
-#         messages=messages,
-#         temperature=0.3,
-#         max_tokens=60,
-#         # stop=["\n"]
-#     )
-
-#     return response.choices[0].message.content.strip()
 
 def generate_reply(history: list[str]) -> str:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    # ✅ keep more context (important)
-    trimmed = history[-12:]   # was 6 → too small
+    trimmed = history[-12:]
 
+    # The LAST item is always the user's words.
+    # Count backwards from the end: last=user, second-to-last=assistant, etc.
     for i, content in enumerate(trimmed):
-        role = "user" if i % 2 == 0 else "assistant"
+        dist_from_end = len(trimmed) - 1 - i
+        role = "user" if dist_from_end % 2 == 0 else "assistant"
         messages.append({"role": role, "content": content})
 
-    # DEBUG
+    # Debug — remove once confirmed working
     for m in messages[1:]:
-        print(f"[{m['role']}] {m['content'][:60]}")
+        print(f"   [{m['role']}] {m['content'][:60]}")
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
-        temperature=0.5,
-        max_tokens=60
+        temperature=0.3,
+        max_tokens=60,
+        # stop=["\n"]
     )
 
-    reply = response.choices[0].message.content.strip()
-
-    # ✅ prevent repeated greeting
-    if "hi sir" in reply.lower() and len(history) > 2:
-        reply = reply.replace("Hi sir,", "").replace("Hi Sir,", "")
-
-    return reply
+    return response.choices[0].message.content.strip()

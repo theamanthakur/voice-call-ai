@@ -603,38 +603,62 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
             "event": "clear",
             "streamSid": stream_sid
         }))
+    
+    # async def stream_audio_to_twilio(reply: str):
+    #     try:
+    #         for chunk in text_to_speech_stream(reply):  # streaming, not list
+    #             if not isinstance(chunk, bytes) or not chunk:
+    #                 continue
 
+    #         await send_audio(chunk)
+
+    #     except Exception as e:
+    #         print("❌ TTS ERROR:", e)
+    #     return list(text_to_speech_stream(reply))
+
+    #     chunks = await loop.run_in_executor(None, collect_chunks)
+
+    #     buffer = b""
+    #     for chunk in chunks:
+    #         if not isinstance(chunk, bytes) or not chunk:
+    #             continue
+    #         buffer += chunk
+    #         while len(buffer) >= FRAME_SIZE:
+    #             frame = buffer[:FRAME_SIZE]
+    #             buffer = buffer[FRAME_SIZE:]
+    #             await send_audio(frame)
+    #             await asyncio.sleep(FRAME_DELAY)
+
+    #     if buffer:
+    #         buffer += b"\xff" * (FRAME_SIZE - len(buffer))
+    #         await send_audio(buffer)
+
+    # # ── STT / LLM pipeline ───────────────────────────────────────────────────
     async def stream_audio_to_twilio(reply: str):
         try:
-            for chunk in text_to_speech_stream(reply):  # streaming, not list
+            buffer = b""
+
+            for chunk in text_to_speech_stream(reply):
                 if not isinstance(chunk, bytes) or not chunk:
                     continue
 
-            await send_audio(chunk)
+                buffer += chunk
+
+                while len(buffer) >= FRAME_SIZE:
+                    frame = buffer[:FRAME_SIZE]
+                    buffer = buffer[FRAME_SIZE:]
+
+                    await send_audio(frame)
+                    await asyncio.sleep(FRAME_DELAY)
+
+            # flush remaining audio
+            if buffer:
+                buffer += b"\xff" * (FRAME_SIZE - len(buffer))
+                await send_audio(buffer)
 
         except Exception as e:
             print("❌ TTS ERROR:", e)
-        return list(text_to_speech_stream(reply))
-
-        chunks = await loop.run_in_executor(None, collect_chunks)
-
-        buffer = b""
-        for chunk in chunks:
-            if not isinstance(chunk, bytes) or not chunk:
-                continue
-            buffer += chunk
-            while len(buffer) >= FRAME_SIZE:
-                frame = buffer[:FRAME_SIZE]
-                buffer = buffer[FRAME_SIZE:]
-                await send_audio(frame)
-                await asyncio.sleep(FRAME_DELAY)
-
-        if buffer:
-            buffer += b"\xff" * (FRAME_SIZE - len(buffer))
-            await send_audio(buffer)
-
-    # ── STT / LLM pipeline ───────────────────────────────────────────────────
-
+        
     async def process_user_input():
         nonlocal user_speech_buffer, playback_task
 

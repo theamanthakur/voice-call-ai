@@ -8,9 +8,13 @@ from websockets.legacy.client import WebSocketClientProtocol
 from app.config import DEEPGRAM_API_KEY
 
 # ===== CONFIG =====
-DEEPGRAM_MODEL = "nova-3"   # nova-3 or nova-2
-LANGUAGE = "hi"
-SAMPLE_RATE = 8000          # Twilio μ-law default
+# DEEPGRAM_MODEL = "nova-3"   # nova-3 or nova-2
+# LANGUAGE = "hi"
+# SAMPLE_RATE = 8000          # Twilio μ-law default
+# CONTENT_TYPE = f"audio/mulaw;rate={SAMPLE_RATE}"
+DEEPGRAM_MODEL = "nova-2"   # faster than nova-3
+LANGUAGE = "hi-IN"          # better locale handling
+SAMPLE_RATE = 8000
 CONTENT_TYPE = f"audio/mulaw;rate={SAMPLE_RATE}"
 
 class DeepgramRaw:
@@ -26,7 +30,7 @@ class DeepgramRaw:
             f"&encoding=mulaw"           
              f"&sample_rate={SAMPLE_RATE}"
             f"&interim_results=true"
-            f"&endpointing=300"
+            f"&endpointing=100"
         )
 
         uri = f"wss://api.deepgram.com/v1/listen?{params}"

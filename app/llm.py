@@ -77,7 +77,7 @@ Project:
 
 Rules:
 - Do not disclose exact price unless asked.
-- If needed, say “budget-friendly range”.
+- If needed, say “budget-friendly range or 40 to 90 lakhs range”.
 - Sound like you know the Vasant Vihar area well.
 - Do not overpromise returns.
 

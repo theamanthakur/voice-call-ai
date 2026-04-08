@@ -29,10 +29,6 @@
 
 # app/twilio_call.py
 from twilio.rest import Client
-from app.config import EXOTEL_SID, EXOTEL_TOKEN, EXOTEL_NUMBER
-import requests
-
-
 from app.config import (
     TWILIO_SID,
     TWILIO_TOKEN,
@@ -45,35 +41,15 @@ client = Client(TWILIO_SID, TWILIO_TOKEN)
 _sid_to_number: dict[str, str] = {}
 
 
-# def call_number(to_number: str) -> str:
-#     call = client.calls.create(
-#         to=to_number,
-#         from_=TWILIO_FROM_NUMBER,
-#         url="https://web-production-c0d66.up.railway.app/voice",
-#     )
-#     _sid_to_number[call.sid] = to_number
-#     print(f"📞 Outbound call → {to_number} | SID: {call.sid}")
-#     return call.sid
-
-def call_number(number: str):
-
-    url = f"https://api.exotel.com/v1/Accounts/{EXOTEL_SID}/Calls/connect"
-
-    payload = {
-        "From": EXOTEL_NUMBER,
-        "To": number,
-        "CallerId": EXOTEL_NUMBER,
-        "Url": "https://web-production-c0d66.up.railway.app/exotel-voice"
-    }
-
-    res = requests.post(
-        url,
-        data=payload,
-        auth=(EXOTEL_SID, EXOTEL_TOKEN)
+def call_number(to_number: str) -> str:
+    call = client.calls.create(
+        to=to_number,
+        from_=TWILIO_FROM_NUMBER,
+        url="https://web-production-c0d66.up.railway.app/voice",
     )
-
-    print("📞 Exotel call triggered:", res.text)
-    return res.text
+    _sid_to_number[call.sid] = to_number
+    print(f"📞 Outbound call → {to_number} | SID: {call.sid}")
+    return call.sid
 
 
 def get_number_for_sid(call_sid: str) -> str | None:

@@ -140,20 +140,6 @@ async def call_batch(data: dict):
         call_number(number)
     return {"status": "started", "count": len(numbers)}
 
-@app.post("/exotel-voice")
-def exotel_voice():
-    return {
-        "action": {
-            "type": "connect",
-            "url": "wss://web-production-c0d66.up.railway.app/exotel-ws"
-        }
-    }
-
-
-@app.websocket("/exotel-ws")
-async def exotel_ws_endpoint(websocket: WebSocket):
-    await exotel_ws(websocket)
-
 
 @app.post("/analyze-call")
 async def analyze(data: CallTranscript):

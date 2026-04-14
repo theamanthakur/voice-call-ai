@@ -74,7 +74,7 @@ PROJECT (Nirvaana Hills):
 - 200-acre gated FARMLAND, Mahendergarh, Haryana. 2 hrs from Delhi/Gurgaon.
 - Hills + forest on 3 sides, 1L+ trees, bird sanctuary theme.
 - 33ft roads, Golf Range, Clubhouse ~11K sqft, natural pond, sports zones.
-- LOI with StayVista. Freehold. Starts ~₹35L/acre.
+- LOI with StayVista. Freehold. Starts ~₹1.35 Cr/acre.
 
 WORD RULES:
 - FARMLAND (not farmhouse/farm). PREMIUM (not luxury).

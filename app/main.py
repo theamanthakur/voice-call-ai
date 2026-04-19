@@ -86,7 +86,6 @@ from app.twilio_call import call_number
 from app.models import CallTranscript
 from app.analyzer import analyze_call
 from app.store import get_all_results
-from app.store import is_call_active, get_result 
 
 app = FastAPI()
 
@@ -154,14 +153,5 @@ async def analyze(data: CallTranscript):
 
 
 @app.get("/results")
-def get_results(phone: str | None = None):
-    key = phone or "latest"  # whatever key logic you use
-
-    if is_call_active(key):
-        return {"status": "call_in_progress", "data": None}
-
-    result = get_result(key)
-    if not result:
-        return {"status": "not_found", "data": None}
-
-    return {"status": "ready", "data": result}
+def get_results():
+    return get_all_results()

@@ -806,8 +806,6 @@
 #         except Exception as e:
 #             print(f"⚠️ Analyzer error: {e}")
 
-
-
 # app/twilio_ws.py
 from fastapi import WebSocket
 import json
@@ -817,8 +815,6 @@ import asyncio
 from app.stt_raw import DeepgramRaw
 from app.llm import generate_reply
 from app.tts import text_to_speech_stream
-from app.analyzer import analyze_call
-from app.store import save_result, set_call_active, set_call_inactive
 
 SILENCE_THRESHOLD = 0.15
 FRAME_SIZE = 160
@@ -833,7 +829,6 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
 
     stream_sid: str | None = None
     history: list[str] = []
-    transcript_log: list[dict] = []
 
     user_speech_buffer: list[str] = []
     silence_timer: asyncio.Task | None = None
@@ -892,13 +887,11 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
 
         print(f"👤 User: {combined_text}")
         history.append(combined_text)
-        transcript_log.append({"speaker": "user", "text": combined_text})
 
         reply = await loop.run_in_executor(None, generate_reply, history)
 
         print(f"🤖 Ananya: {reply}")
         history.append(reply)
-        transcript_log.append({"speaker": "agent", "text": reply})
 
         if playback_task and not playback_task.done():
             playback_task.cancel()
@@ -955,20 +948,12 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
             if event == "start":
                 stream_sid = data["start"]["streamSid"]
                 call_sid = data["start"].get("callSid")
-
                 if call_sid and phone_number is None:
                     from app.twilio_call import get_number_for_sid
                     phone_number = get_number_for_sid(call_sid)
-
                 print(f"📞 Stream started | SID: {stream_sid} | Number: {phone_number}")
-
-                # 🔒 Mark call as active — blocks /results from returning data
-                key = phone_number or stream_sid or f"call_{id(websocket)}"
-                set_call_active(key)
-
-                greeting = "नमस्ते सर! मैं Bansal Estate से बोल रही हूँ—Dwarka Mor में 3 BHK फ्लैट है, क्या अभी बात करना सही रहेगा?"
+                greeting = "नमस्ते Sir! Main Garg Estate se bol rahi hoon — Dwarka Mor mein ek solid 3 BHK flat hai, kya aapse 2 minute baat ho sakti hai?"
                 history.append(greeting)
-                transcript_log.append({"speaker": "agent", "text": greeting})
                 asyncio.create_task(stream_audio_to_twilio(greeting))
 
             elif event == "media":
@@ -983,7 +968,7 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
     except Exception as e:
         print(f"❌ WS error: {e}")
 
-    # ── Cleanup + Analysis ───────────────────────────────────────────────────
+    # ── Cleanup ───────────────────────────────────────────────────────────────
 
     finally:
         if silence_timer and not silence_timer.done():
@@ -997,41 +982,4 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
                 pass
 
         await dg.close()
-
-        try:
-            if not transcript_log:
-                print("⚠️ No transcript — skipping analysis")
-                key = phone_number or stream_sid or f"call_{id(websocket)}"
-                set_call_inactive(key)  # unblock even on empty transcript
-                return
-
-            full_transcript = "\n".join(
-                f"{x['speaker']}: {x['text']}" for x in transcript_log
-            )
-            print("\n📜 Transcript\n", full_transcript)
-
-            analysis_raw = analyze_call(full_transcript)
-            analysis = json.loads(analysis_raw)
-
-            analysis["duration_seconds"] = len(transcript_log) * 15
-            analysis["phone_number"] = phone_number
-            analysis["stream_sid"] = stream_sid
-
-            print("\n📊 Analysis\n", analysis)
-
-            key = phone_number or stream_sid or f"call_{id(websocket)}"
-
-            save_result(key, {
-                "number": phone_number,
-                "stream_sid": stream_sid,
-                "transcript": full_transcript,
-                "analysis": analysis
-            })
-
-        except Exception as e:
-            print(f"⚠️ Analyzer error: {e}")
-
-        finally:
-            # ✅ Always unblock /results AFTER save is complete
-            key = phone_number or stream_sid or f"call_{id(websocket)}"
-            set_call_inactive(key)
+        print("🧹 WebSocket cleaned up")

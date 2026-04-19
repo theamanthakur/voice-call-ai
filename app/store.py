@@ -29,3 +29,16 @@ def get_all_results() -> list:
     with _lock:
         data = _load()
         return list(data.values())
+    
+    # app/store.py — add these alongside your existing save_result()
+
+_active_calls: set[str] = set()
+
+def set_call_active(key: str):
+    _active_calls.add(key)
+
+def set_call_inactive(key: str):
+    _active_calls.discard(key)
+
+def is_call_active(key: str) -> bool:
+    return key in _active_calls

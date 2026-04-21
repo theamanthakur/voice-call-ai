@@ -952,7 +952,8 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
                     from app.twilio_call import get_number_for_sid
                     phone_number = get_number_for_sid(call_sid)
                 print(f"📞 Stream started | SID: {stream_sid} | Number: {phone_number}")
-                greeting = "नमस्ते Sir! Mai Garg Estate se bol rahi hoon — Dwarka Mor mein ek solid 3 BHK flat hai, kya aapse 2 minute baat ho sakti hai?"
+                # greeting = "नमस्ते Sir! Mai Garg Estate se bol rahi hoon — Dwarka Mor mein ek solid 3 BHK flat hai, kya aapse 2 minute baat ho sakti hai?"
+                greeting = "Namaste Sir! I'm calling from SEED Realty regarding a farmland opportunity—can I take 2 minutes of your time?"
                 history.append(greeting)
                 asyncio.create_task(stream_audio_to_twilio(greeting))
 

@@ -1,20 +1,18 @@
 # app/whatsapp_webhook.py
 
 from fastapi import APIRouter, Request
+from fastapi.responses import PlainTextResponse
+
 import os
+import json
+
 from app.whatsapp_agent import generate_whatsapp_reply
 from app.whatsapp_service import send_whatsapp_message
 from app.twilio_call import call_number
-from fastapi.responses import PlainTextResponse
-
 
 router = APIRouter()
 
-
 VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN")
-
-
-from fastapi.responses import PlainTextResponse
 
 
 @router.get("/webhook/whatsapp")
@@ -23,9 +21,7 @@ async def verify_webhook(request: Request):
     params = request.query_params
 
     mode = params.get("hub.mode")
-
     token = params.get("hub.verify_token")
-
     challenge = params.get("hub.challenge")
 
     print("📩 META WEBHOOK VERIFY HIT")
@@ -45,41 +41,101 @@ async def verify_webhook(request: Request):
 async def whatsapp_webhook(payload: dict):
 
     try:
+
+        print("\n==============================")
+        print("🔥 WHATSAPP MESSAGE RECEIVED")
+        print("==============================")
+
+        print(json.dumps(payload, indent=2))
+
         entry = payload["entry"][0]
+
         changes = entry["changes"][0]
+
         value = changes["value"]
 
         messages = value.get("messages")
 
         if not messages:
+
+            print("⚠ No messages found")
+
             return {"status": "ignored"}
 
         msg = messages[0]
 
+        # ignore non-text messages
+        if "text" not in msg:
+
+            print("⚠ Non-text message ignored")
+
+            return {"status": "non-text ignored"}
+
         phone = msg["from"]
-        text = msg["text"]["body"]
 
-        print(f"📩 {phone}: {text}")
+        text = msg["text"]["body"].strip()
 
-        # AI reply
+        lower_text = text.lower()
+
+        print(f"📲 Phone: {phone}")
+        print(f"💬 Message: {text}")
+
+        # AI reply generation
         ai_reply = generate_whatsapp_reply(text)
 
-        send_whatsapp_message(phone, ai_reply)
+        print(f"🤖 AI Reply: {ai_reply}")
 
-        # trigger call condition
+        # send WhatsApp reply
+        send_whatsapp_message(
+            phone,
+            ai_reply
+        )
+
+        print("✅ WhatsApp reply sent")
+
+        # call trigger conditions
         trigger_words = [
-            "call",
-            "yes",
+            "call me",
+            "yes call me",
             "interested",
-            "book",
+            "book a call",
+            "contact me",
+            "callback",
         ]
 
-        if any(word in text.lower() for word in trigger_words):
+        should_call = any(
+            word in lower_text
+            for word in trigger_words
+        )
 
+        if should_call:
+
+            print(f"📞 Triggering AI call to +{phone}")
+
+            # optional confirmation message
+            send_whatsapp_message(
+                phone,
+                "Perfect sir 👍 Our AI advisor is calling you now."
+            )
+
+            # trigger Twilio voice AI call
             call_number(f"+{phone}")
 
-        return {"status": "success"}
+            print("✅ AI Call Started")
+
+        else:
+
+            print("ℹ No call trigger matched")
+
+        return {
+            "status": "success"
+        }
 
     except Exception as e:
-        print("❌ webhook error:", e)
-        return {"error": str(e)}
+
+        print("❌ WHATSAPP WEBHOOK ERROR")
+        print(str(e))
+
+        return {
+            "error": str(e)
+        }

@@ -86,6 +86,15 @@ from app.twilio_call import call_number
 from app.models import CallTranscript
 from app.analyzer import analyze_call
 from app.store import get_all_results
+from app.whatsapp_webhook import router as whatsapp_router
+from app.lead_store import get_leads
+from app.meta_service import (
+    create_campaign,
+    upload_image,
+    create_ad_creative,
+    create_adset,
+    create_ad,
+)
 
 app = FastAPI()
 
@@ -155,3 +164,86 @@ async def analyze(data: CallTranscript):
 @app.get("/results")
 def get_results():
     return get_all_results()
+
+
+@app.get("/leads")
+def leads():
+    return get_leads()
+
+
+@app.post("/create-ad")
+async def create_ad_endpoint():
+
+    print("\n==============================")
+    print("🚀 FULL META FLOW STARTED")
+    print("==============================")
+
+    # CAMPAIGN
+    campaign = create_campaign(
+        "AI Outreach Campaign"
+    )
+
+    campaign_id = campaign["id"]
+
+    print("✅ Campaign ID:", campaign_id)
+
+    # IMAGE
+    image = upload_image(
+        "static/ad.jpg"
+    )
+
+    image_hash = list(
+        image["images"].values()
+    )[0]["hash"]
+
+    print("✅ Image Hash:", image_hash)
+
+    # CREATIVE
+    creative = create_ad_creative(
+        image_hash=image_hash,
+        message="Premium 2-3 BHK homes in Dwarka. Message now.",
+        whatsapp_number="9198XXXXXXX"
+    )
+
+    creative_id = creative["id"]
+
+    print("✅ Creative ID:", creative_id)
+
+    # ADSET
+    adset = create_adset(
+        campaign_id
+    )
+
+    adset_id = adset["id"]
+
+    print("✅ AdSet ID:", adset_id)
+
+    # FINAL AD
+    ad = create_ad(
+        creative_id=creative_id,
+        adset_id=adset_id
+    )
+
+    print("✅ AD CREATED")
+
+    return {
+        "campaign": campaign,
+        "creative": creative,
+        "adset": adset,
+        "ad": ad
+    }
+
+
+@app.get("/debug-pages")
+def debug_pages():
+
+    import requests
+    import os
+
+    token = os.getenv("META_ACCESS_TOKEN")
+
+    url = f"https://graph.facebook.com/v22.0/me/accounts?access_token={token}"
+
+    response = requests.get(url)
+
+    return response.json()

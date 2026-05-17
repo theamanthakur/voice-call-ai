@@ -88,6 +88,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 # GOAL: Build curiosity turn by turn → position as land asset + legacy investment → close on visit.
 # """
+
 SYSTEM_PROMPT = """
 You are Ananya, Senior Sales Associate at Shiv Builders, representing premium 2–3 BHK homes in Dwarka, Delhi.
 

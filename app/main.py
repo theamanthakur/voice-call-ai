@@ -247,3 +247,5 @@ def debug_pages():
     response = requests.get(url)
 
     return response.json()
+
+app.include_router(whatsapp_router)

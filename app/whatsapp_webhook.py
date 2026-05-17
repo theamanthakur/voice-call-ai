@@ -5,6 +5,8 @@ import os
 from app.whatsapp_agent import generate_whatsapp_reply
 from app.whatsapp_service import send_whatsapp_message
 from app.twilio_call import call_number
+from fastapi.responses import PlainTextResponse
+
 
 router = APIRouter()
 
@@ -12,16 +14,29 @@ router = APIRouter()
 VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN")
 
 
+from fastapi.responses import PlainTextResponse
+
+
 @router.get("/webhook/whatsapp")
 async def verify_webhook(request: Request):
 
     params = request.query_params
 
-    if (
-        params.get("hub.mode") == "subscribe"
-        and params.get("hub.verify_token") == VERIFY_TOKEN
-    ):
-        return int(params.get("hub.challenge"))
+    mode = params.get("hub.mode")
+
+    token = params.get("hub.verify_token")
+
+    challenge = params.get("hub.challenge")
+
+    print("📩 META WEBHOOK VERIFY HIT")
+
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+
+        print("✅ WEBHOOK VERIFIED")
+
+        return PlainTextResponse(content=challenge)
+
+    print("❌ WEBHOOK VERIFY FAILED")
 
     return {"error": "verification failed"}
 

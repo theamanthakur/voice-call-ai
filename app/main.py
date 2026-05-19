@@ -80,6 +80,14 @@
 # app/main.py
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import Response
+from fastapi import (
+FastAPI,
+WebSocket,
+Request,
+UploadFile,
+File
+)
+
 from fastapi.middleware.cors import CORSMiddleware
 from app.twilio_ws import twilio_ws
 from app.twilio_call import call_number
@@ -95,6 +103,10 @@ from app.meta_service import (
     create_adset,
     create_ad,
 )
+from app.whatsapp_campaign import send_template_message
+from app.whatsapp_templates import get_templates
+
+
 
 app = FastAPI()
 
@@ -171,69 +183,136 @@ def leads():
     return get_leads()
 
 
+# @app.post("/create-ad")
+# async def create_ad_endpoint():
+
+#     print("\n==============================")
+#     print("🚀 FULL META FLOW STARTED")
+#     print("==============================")
+
+#     # CAMPAIGN
+#     campaign = create_campaign(
+#         "AI Outreach Campaign"
+#     )
+
+#     campaign_id = campaign["id"]
+
+#     print("✅ Campaign ID:", campaign_id)
+
+#     # IMAGE
+#     image = upload_image(
+#         "static/ad.jpg"
+#     )
+
+#     image_hash = list(
+#         image["images"].values()
+#     )[0]["hash"]
+
+#     print("✅ Image Hash:", image_hash)
+
+#     # CREATIVE
+#     creative = create_ad_creative(
+#         image_hash=image_hash,
+#         message="Premium 2-3 BHK homes in Dwarka. Message now.",
+#         whatsapp_number="9198XXXXXXX"
+#     )
+
+#     creative_id = creative["id"]
+
+#     print("✅ Creative ID:", creative_id)
+
+#     # ADSET
+#     adset = create_adset(
+#         campaign_id
+#     )
+
+#     adset_id = adset["id"]
+
+#     print("✅ AdSet ID:", adset_id)
+
+#     # FINAL AD
+#     ad = create_ad(
+#         creative_id=creative_id,
+#         adset_id=adset_id
+#     )
+
+#     print("✅ AD CREATED")
+
+#     return {
+#         "campaign": campaign,
+#         "creative": creative,
+#         "adset": adset,
+#         "ad": ad
+#     }
+
 @app.post("/create-ad")
-async def create_ad_endpoint():
+async def create_ad_endpoint(
+    request: Request,
+    image: UploadFile = File(...),
+):
+    try:
+        form = await request.form()
 
-    print("\n==============================")
-    print("🚀 FULL META FLOW STARTED")
-    print("==============================")
+        campaign_name = form.get("campaign_name")
+        message = form.get("message")
+        whatsapp_number = form.get("whatsapp_number")
 
-    # CAMPAIGN
-    campaign = create_campaign(
-        "AI Outreach Campaign"
-    )
+        print("\n==============================")
+        print("🚀 FULL META FLOW STARTED")
+        print("==============================")
 
-    campaign_id = campaign["id"]
+        # SAVE IMAGE
+        image_path = f"temp/{image.filename}"
+        with open(image_path, "wb") as f:
+            f.write(await image.read())
 
-    print("✅ Campaign ID:", campaign_id)
+        # CAMPAIGN
+        campaign = create_campaign(campaign_name)
+        campaign_id = campaign["id"]
+        print("✅ Campaign ID:", campaign_id)
 
-    # IMAGE
-    image = upload_image(
-        "static/ad.jpg"
-    )
+        # IMAGE
+        uploaded = upload_image(image_path)
+        image_hash = list(uploaded["images"].values())[0]["hash"]
+        print("✅ Image Hash:", image_hash)
 
-    image_hash = list(
-        image["images"].values()
-    )[0]["hash"]
+        # CREATIVE
+        creative = create_ad_creative(
+            image_hash=image_hash,
+            message=message,
+            whatsapp_number=whatsapp_number,
+        )
+        creative_id = creative["id"]
+        print("✅ Creative ID:", creative_id)
 
-    print("✅ Image Hash:", image_hash)
+        # ADSET
+        adset = create_adset(campaign_id)
+        adset_id = adset["id"]
+        print("✅ AdSet ID:", adset_id)
 
-    # CREATIVE
-    creative = create_ad_creative(
-        image_hash=image_hash,
-        message="Premium 2-3 BHK homes in Dwarka. Message now.",
-        whatsapp_number="9198XXXXXXX"
-    )
+        # FINAL AD
+        ad = create_ad(
+            creative_id=creative_id,
+            adset_id=adset_id,
+        )
+        print("✅ AD CREATED")
 
-    creative_id = creative["id"]
+        return {
+            "success": True,
+            "campaign": campaign,
+            "creative": creative,
+            "adset": adset,
+            "ad": ad,
+        }
 
-    print("✅ Creative ID:", creative_id)
-
-    # ADSET
-    adset = create_adset(
-        campaign_id
-    )
-
-    adset_id = adset["id"]
-
-    print("✅ AdSet ID:", adset_id)
-
-    # FINAL AD
-    ad = create_ad(
-        creative_id=creative_id,
-        adset_id=adset_id
-    )
-
-    print("✅ AD CREATED")
-
-    return {
-        "campaign": campaign,
-        "creative": creative,
-        "adset": adset,
-        "ad": ad
-    }
-
-
+    except Exception as e:
+        print("❌ CREATE AD ERROR:", str(e))
+        return {
+            "success": False,
+            "error": str(e),
+        }
+    
+    
 @app.get("/debug-pages")
 def debug_pages():
 
@@ -249,3 +328,27 @@ def debug_pages():
     return response.json()
 
 app.include_router(whatsapp_router)
+
+
+@app.post("/send-campaign")
+async def send_campaign(data: dict):
+
+    leads = data.get("leads", [])
+
+    for lead in leads:
+
+        send_template_message(
+            phone=lead["phone"],
+            customer_name=lead["name"]
+        )
+
+    return {
+        "status": "campaign sent",
+        "count": len(leads)
+    }
+
+
+@app.get("/templates")
+def templates():
+
+    return get_templates()

@@ -312,7 +312,7 @@ async def create_ad_endpoint(
             "error": str(e),
         }
     
-    
+
 @app.get("/debug-pages")
 def debug_pages():
 
@@ -330,23 +330,45 @@ def debug_pages():
 app.include_router(whatsapp_router)
 
 
+# @app.post("/send-campaign")
+# async def send_campaign(data: dict):
+
+#     leads = data.get("leads", [])
+
+#     for lead in leads:
+
+#         send_template_message(
+#             phone=lead["phone"],
+#             customer_name=lead["name"]
+#         )
+
+#     return {
+#         "status": "campaign sent",
+#         "count": len(leads)
+#     }
+
 @app.post("/send-campaign")
 async def send_campaign(data: dict):
 
     leads = data.get("leads", [])
 
+    template_name = data.get(
+        "template_name",
+        "hello_world"
+    )
+
     for lead in leads:
 
         send_template_message(
             phone=lead["phone"],
-            customer_name=lead["name"]
+            customer_name=lead["name"],
+            template_name=template_name
         )
 
     return {
         "status": "campaign sent",
         "count": len(leads)
     }
-
 
 @app.get("/templates")
 def templates():

@@ -37,7 +37,7 @@ class DeepgramRaw:
             f"&encoding=mulaw"
             f"&sample_rate=8000"
             f"&interim_results=true"
-            f"&endpointing=100"
+            f"&endpointing=20"
         )
         uri = f"wss://api.deepgram.com/v1/listen?{params}"
 

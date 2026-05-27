@@ -34,7 +34,6 @@ class DeepgramRaw:
         # )
         params = (
             f"model=nova-2"
-            f"&language=hi"
             f"&encoding=mulaw"
             f"&sample_rate=8000"
             f"&interim_results=true"

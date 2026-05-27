@@ -32,24 +32,14 @@ class DeepgramRaw:
         #     f"&interim_results=true"
         #     f"&endpointing=100"
         # )
-        # params = (
-        #     f"model=nova-2"
-        #     f"&encoding=mulaw"
-        #     f"&sample_rate=8000"
-        #     f"&interim_results=true"
-        #     f"&endpointing=100"
-        # )
-
         params = (
-    f"model=nova-2"
-    f"&language=hi-IN"
-    f"&smart_format=true"
-    f"&punctuate=true"
-    f"&encoding=mulaw"
-    f"&sample_rate=8000"
-    f"&interim_results=true"
-    f"&endpointing=150"
-    )
+            f"model=nova-2"
+            f"&language={LANGUAGE}"
+            f"&encoding=mulaw"
+            f"&sample_rate=8000"
+            f"&interim_results=true"
+            f"&endpointing=100"
+        )
         uri = f"wss://api.deepgram.com/v1/listen?{params}"
 
         headers = [

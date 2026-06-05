@@ -808,25 +808,25 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
             if phone_number:
 
                 reservation_msg = f"""
-                🍸 GILDED YARD COURTYARD
+                🍸 *GILDED YARD COURTYARD*
 
                 Hello Sir,
 
                 Thank you for speaking with us.
 
-                📅 Reservation Status: Confirmed
-                📍 Venue: Gilded Yard Courtyard, Gurugram
+                📅 *Reservation Status*: Confirmed
+                📍 *Venue*: Gilded Yard Courtyard, Gurugram Sec 48
 
-                📝 Reservation Summary
+                📝 *Reservation Summary*
                 {analysis.get('summary', 'Table reservation requested.')}
 
-                👥 Guests: {analysis.get('guest_count', 'As discussed')}
+                👥 *Guests*: {analysis.get('guest_count', 'As discussed')}
                 🕒 Preferred Time: {analysis.get('preferred_time', 'As discussed')}
 
-                ✨ Event Highlight
+                ✨ *Event Highlight*
                 Sunny Leone is expected to make a special appearance at the venue.
 
-                💰 Table Reservation: ₹25,000
+                💰 *Table Reservation*: ₹25,000
                 💰 Stag Entry: ₹5,000 per person
 
                 We look forward to hosting you at Gilded Yard Courtyard.

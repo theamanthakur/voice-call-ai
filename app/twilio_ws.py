@@ -565,6 +565,7 @@ from app.llm import generate_reply
 from app.tts import text_to_speech_stream
 from app.analyzer import analyze_call
 from app.store import save_result
+from app.whatsapp_service import send_whatsapp_message
 
 
 async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
@@ -803,6 +804,38 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
                 "transcript": full_transcript,
                 "analysis": analysis
             })
+            
+            if phone_number:
 
+                reservation_msg = f"""
+                🍸 GILDED YARD COURTYARD
+
+                Hello Sir,
+
+                Thank you for speaking with us.
+
+                📅 Reservation Status: Confirmed
+                📍 Venue: Gilded Yard Courtyard, Gurugram
+
+                📝 Reservation Summary
+                {analysis.get('summary', 'Table reservation requested.')}
+
+                👥 Guests: {analysis.get('guest_count', 'As discussed')}
+                🕒 Preferred Time: {analysis.get('preferred_time', 'As discussed')}
+
+                ✨ Event Highlight
+                Sunny Leone is expected to make a special appearance at the venue.
+
+                💰 Table Reservation: ₹25,000
+                💰 Stag Entry: ₹5,000 per person
+
+                We look forward to hosting you at Gilded Yard Courtyard.
+                """
+
+            send_whatsapp_message(
+            phone_number.replace("+", ""),
+            reservation_msg
+            )
+        
         except Exception as e:
             print(f"⚠️ Analyzer error: {e}")

@@ -803,7 +803,27 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
             if phone_number:
 
                
-                reservation_msg = f""" 🏡 *BELLAVISSTA by Kuber Realty* Hello {analysis.get('user_name', 'Sir')}, Thank you for speaking with us. 📍 Project: Bellavissta 📌 Airport Residential Area 2, Accra 📝 *Call Summary* {analysis.get('call_summary', 'Property inquiry received.')} 📈 Interest Score: {analysis.get('interest_score', '--')}/100 🔥 Lead Quality: {analysis.get('lead_quality', '--').title()} 🎯 Intent: {analysis.get('intent_level', '--').title()} 📌 Next Step: {analysis.get('next_action', 'Our Senior Property Consultant will contact you shortly.')} Thank you for choosing Bellavissta by Kuber Realty. """
+                reservation_msg = f"""
+                🏡 *BELLAVISSTA by Kuber Realty*
+
+                Hello {analysis.get('user_name', 'Sir')},
+
+                Thank you for taking the time to speak with us today.
+
+                📍 *Project:* Bellavissta
+                📌 *Location:* Airport Residential Area 2, Accra
+
+                📝 *Discussion Summary*
+                {analysis.get('call_summary', 'Thank you for your interest in Bellavissta.')}
+
+                📞 *What's Next?*
+                {analysis.get('next_action', 'One of our Senior Property Consultants will contact you shortly to assist you with pricing, availability, and site visit scheduling.')}
+
+                If you have any questions before then, simply reply to this message—we'll be happy to assist.
+
+                Thank you for choosing *Bellavissta by Kuber Realty*. We look forward to helping you find your dream home.
+                """
+
 
             send_whatsapp_message(
             phone_number.replace("+", ""),

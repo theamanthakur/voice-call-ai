@@ -247,72 +247,72 @@ def leads():
 #         "ad": ad
 #     }
 
-# @app.post("/create-ad")
-# async def create_ad_endpoint(
-#     request: Request,
-#     image: UploadFile = File(...),
-# ):
-#     try:
-#         form = await request.form()
+@app.post("/create-ad")
+async def create_ad_endpoint(
+    request: Request,
+    image: UploadFile = File(...),
+):
+    try:
+        form = await request.form()
 
-#         campaign_name = form.get("campaign_name")
-#         message = form.get("message")
-#         whatsapp_number = form.get("whatsapp_number")
+        campaign_name = form.get("campaign_name")
+        message = form.get("message")
+        whatsapp_number = form.get("whatsapp_number")
 
-#         print("\n==============================")
-#         print("🚀 FULL META FLOW STARTED")
-#         print("==============================")
+        print("\n==============================")
+        print("🚀 FULL META FLOW STARTED")
+        print("==============================")
 
-#         # SAVE IMAGE
-#         image_path = f"temp/{image.filename}"
-#         with open(image_path, "wb") as f:
-#             f.write(await image.read())
+        # SAVE IMAGE
+        image_path = f"temp/{image.filename}"
+        with open(image_path, "wb") as f:
+            f.write(await image.read())
 
-#         # CAMPAIGN
-#         campaign = create_campaign(campaign_name)
-#         campaign_id = campaign["id"]
-#         print("✅ Campaign ID:", campaign_id)
+        # CAMPAIGN
+        campaign = create_campaign(campaign_name)
+        campaign_id = campaign["id"]
+        print("✅ Campaign ID:", campaign_id)
 
-#         # IMAGE
-#         uploaded = upload_image(image_path)
-#         image_hash = list(uploaded["images"].values())[0]["hash"]
-#         print("✅ Image Hash:", image_hash)
+        # IMAGE
+        uploaded = upload_image(image_path)
+        image_hash = list(uploaded["images"].values())[0]["hash"]
+        print("✅ Image Hash:", image_hash)
 
-#         # CREATIVE
-#         creative = create_ad_creative(
-#             image_hash=image_hash,
-#             message=message,
-#             whatsapp_number=whatsapp_number,
-#         )
-#         creative_id = creative["id"]
-#         print("✅ Creative ID:", creative_id)
+        # CREATIVE
+        creative = create_ad_creative(
+            image_hash=image_hash,
+            message=message,
+            whatsapp_number=whatsapp_number,
+        )
+        creative_id = creative["id"]
+        print("✅ Creative ID:", creative_id)
 
-#         # ADSET
-#         adset = create_adset(campaign_id)
-#         adset_id = adset["id"]
-#         print("✅ AdSet ID:", adset_id)
+        # ADSET
+        adset = create_adset(campaign_id)
+        adset_id = adset["id"]
+        print("✅ AdSet ID:", adset_id)
 
-#         # FINAL AD
-#         ad = create_ad(
-#             creative_id=creative_id,
-#             adset_id=adset_id,
-#         )
-#         print("✅ AD CREATED")
+        # FINAL AD
+        ad = create_ad(
+            creative_id=creative_id,
+            adset_id=adset_id,
+        )
+        print("✅ AD CREATED")
 
-#         return {
-#             "success": True,
-#             "campaign": campaign,
-#             "creative": creative,
-#             "adset": adset,
-#             "ad": ad,
-#         }
+        return {
+            "success": True,
+            "campaign": campaign,
+            "creative": creative,
+            "adset": adset,
+            "ad": ad,
+        }
 
-#     except Exception as e:
-#         print("❌ CREATE AD ERROR:", str(e))
-#         return {
-#             "success": False,
-#             "error": str(e),
-#         }
+    except Exception as e:
+        print("❌ CREATE AD ERROR:", str(e))
+        return {
+            "success": False,
+            "error": str(e),
+        }
     
 
 @app.get("/debug-pages")
@@ -376,129 +376,3 @@ async def send_campaign(data: dict):
 def templates():
 
     return get_templates()
-
-@app.post("/create-ad")
-async def create_ad_endpoint(
-    request: Request,
-    image: UploadFile = File(...)
-):
-    try:
-
-        form = await request.form()
-        data = dict(form)
-
-        # Save image
-        os.makedirs("temp", exist_ok=True)
-
-        image_path = f"temp/{uuid.uuid4()}_{image.filename}"
-
-        with open(image_path, "wb") as f:
-            f.write(await image.read())
-
-        # ---------------- Campaign ----------------
-
-        campaign = create_campaign(
-            name=data["campaign_name"],
-            objective=data["objective"],
-            buying_type=data["buying_type"],
-            special_category=data["special_category"],
-        )
-
-        campaign_id = campaign["id"]
-
-        # ---------------- Upload Image ----------------
-
-        uploaded = upload_image(image_path)
-
-        image_hash = list(
-            uploaded["images"].values()
-        )[0]["hash"]
-
-        # ---------------- Creative ----------------
-
-        creative = create_ad_creative(
-            image_hash=image_hash,
-            headline=data["headline"],
-            message=data["message"],
-            whatsapp_number=data["whatsapp_number"],
-            cta=data["cta"],
-            utm_source=data["utm_source"],
-            utm_campaign=data["utm_campaign"],
-        )
-
-        creative_id = creative["id"]
-
-        # ---------------- Adset ----------------
-
-        adset = create_adset(
-
-            campaign_id=campaign_id,
-
-            budget=int(data["daily_budget"]),
-
-            country=data["country"],
-            city=data["city"],
-
-            latitude=data["latitude"],
-            longitude=data["longitude"],
-            radius=data["radius"],
-
-            min_age=data["min_age"],
-            max_age=data["max_age"],
-
-            gender=data["gender"],
-
-            interests=data["interests"],
-            behaviours=data["behaviours"],
-
-            income_segment=data["income_segment"],
-
-            custom_audience=data["custom_audience"],
-            lookalike=data["lookalike"],
-
-            placements=json.loads(data["placements"]),
-
-            optimization_goal=data["optimization_goal"],
-            bid_strategy=data["bid_strategy"],
-
-            start_date=data["start_date"],
-            end_date=data["end_date"]
-        )
-
-        adset_id = adset["id"]
-
-        # ---------------- Final Ad ----------------
-
-        ad = create_ad(
-            creative_id=creative_id,
-            adset_id=adset_id
-        )
-
-        try:
-            os.remove(image_path)
-        except:
-            pass
-
-        return {
-
-            "success": True,
-
-            "campaign_id": campaign_id,
-            "creative_id": creative_id,
-            "adset_id": adset_id,
-            "ad_id": ad["id"],
-
-            "campaign": campaign,
-            "creative": creative,
-            "adset": adset,
-            "ad": ad
-        }
-
-    except Exception as e:
-
-        print(e)
-
-        return {
-            "success": False,
-            "error": str(e)
-        }

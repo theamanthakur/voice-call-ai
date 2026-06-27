@@ -6,8 +6,8 @@ from fastapi.responses import PlainTextResponse
 import os
 import json
 
-from app.kuber_whatsapp_agent import generate_kuber_reply
-from app.kuber_whatsapp_service import send_kuber_message
+from app.kuber.wa_agent import generate_kuber_reply
+from app.kuber.wa_service import send_kuber_message
 from app.twilio_call import call_number
 
 router = APIRouter()

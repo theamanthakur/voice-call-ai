@@ -105,6 +105,7 @@ from app.meta_service import (
 )
 from app.whatsapp_campaign import send_template_message
 from app.whatsapp_templates import get_templates
+from app.kuber.wa_webhook import router as kuber_router
 
 
 
@@ -116,6 +117,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(kuber_router)
 
 # RAILWAY_URL = "web-production-c0d66.up.railway.app"
 RAILWAY_URL = "web-production-c0d66.up.railway.app"

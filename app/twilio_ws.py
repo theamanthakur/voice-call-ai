@@ -791,46 +791,19 @@ async def twilio_ws(websocket: WebSocket, phone_number: str | None = None):
             analysis = json.loads(analysis_raw)
 
             # Inject fields the LLM can't know
+            # 
+            
             analysis["duration_seconds"] = len(transcript_log) * 15
-            analysis["phone_number"] = phone_number
-            analysis["stream_sid"] = stream_sid
-
-            print("\n📊 Analysis\n", analysis)
-
-            key = phone_number or stream_sid or f"call_{id(websocket)}"
-            save_result(key, {
-                "number": phone_number,
-                "stream_sid": stream_sid,
-                "transcript": full_transcript,
-                "analysis": analysis
-            })
+            analysis["phone_number"] = phone_number 
+            analysis["stream_sid"] = stream_sid 
+            print("\n📊 Analysis\n", analysis) 
+            key = phone_number or stream_sid or f"call_{id(websocket)}" 
+            save_result(key, { "number": phone_number, "stream_sid": stream_sid, "transcript": full_transcript, "analysis": analysis })
             
             if phone_number:
 
-                reservation_msg = f"""
-                🍸 *GILDED YARD COURTYARD*
-
-                Hello Sir,
-
-                Thank you for speaking with us.
-
-                📅 *Reservation Status*: Confirmed
-                📍 *Venue*: Gilded Yard Courtyard, Gurugram Sec 48
-
-                📝 *Reservation Summary*
-                {analysis.get('summary', 'Table reservation requested.')}
-
-                👥 *Guests*: {analysis.get('guest_count', 'As discussed')}
-                🕒 Preferred Time: {analysis.get('preferred_time', 'As discussed')}
-
-                ✨ *Event Highlight*
-                Sunny Leone is expected to make a special appearance at the venue.
-
-                💰 *Table Reservation*: ₹25,000
-                💰 Stag Entry: ₹5,000 per person
-
-                We look forward to hosting you at Gilded Yard Courtyard.
-                """
+               
+                reservation_msg = f""" 🏡 *BELLAVISSTA by Kuber Realty* Hello {analysis.get('user_name', 'Sir')}, Thank you for speaking with us. 📍 Project: Bellavissta 📌 Airport Residential Area 2, Accra 📝 *Call Summary* {analysis.get('call_summary', 'Property inquiry received.')} 📈 Interest Score: {analysis.get('interest_score', '--')}/100 🔥 Lead Quality: {analysis.get('lead_quality', '--').title()} 🎯 Intent: {analysis.get('intent_level', '--').title()} 📌 Next Step: {analysis.get('next_action', 'Our Senior Property Consultant will contact you shortly.')} Thank you for choosing Bellavissta by Kuber Realty. """
 
             send_whatsapp_message(
             phone_number.replace("+", ""),
